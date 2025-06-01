@@ -24,9 +24,9 @@ const MainSection2 = () => {
     }, []);
 
     return (
-    <section>
+    <section className="sec2">
         <div>
-            <h2> Main Section 2: Timer</h2>
+            <h2> Run Time Counter</h2>
             <div>
                 <button onClick={startInterval}>timer is {timer}</button>
             </div>
