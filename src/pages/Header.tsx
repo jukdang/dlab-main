@@ -1,8 +1,9 @@
-import './header.css'
+import { Link } from 'react-router-dom';
+import './Header.css'
 import exLogo from '/ex_main_logo.svg'
 
 
-const MainHeader = () => {
+const Header = () => {
 
     return (
         <header>
@@ -12,12 +13,13 @@ const MainHeader = () => {
                 </a>
             </div>
             <nav className="menu">
-                <a href="#menu1">menu1</a>
-                <a href="#menu2">menu2</a>
-                <a href="#menu3">menu3</a>
+                <Link to="/">Home</Link>
+                <Link to="/JackBoard">JackBoard</Link>
+                <Link to="/about">About</Link>
+                <Link to="/contact">Contact</Link>
             </nav>
         </header>
     );
 };
 
-export default MainHeader;
+export default Header;

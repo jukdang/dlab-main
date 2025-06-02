@@ -1,17 +1,21 @@
+import { Route, Routes } from 'react-router-dom'
 import './App.css'
-import MainHeader from './components/main_page/header'
-import MainSection1 from './components/main_page/Section1'
-import MainSection2 from './components/main_page/Section2'
+import Header from './pages/header'
+import HomePage from './pages/HomePage'
+import JackboardPage from './pages/JackBoardPage'
 
 const MainPage = () => {
   
   return (
     <>
-      <MainHeader />
-      <div className='main'>
-        <MainSection1 />
-        <MainSection2 />
-      </div>
+      <Header />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/JackBoard" element={<JackboardPage />} />
+        {/* <Route path="/contact" element={<ContactPage />} /> */}
+      </Routes>
+
+      
 
     </>
     
