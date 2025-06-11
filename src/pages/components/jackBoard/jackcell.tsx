@@ -13,7 +13,6 @@ interface CellProps {
 const Cell = styled.div<CellProps>`
   display: flex;
   width: 100%;
-  aspect-ratio: 1;
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
