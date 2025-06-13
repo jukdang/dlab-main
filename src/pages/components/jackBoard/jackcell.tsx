@@ -49,7 +49,7 @@ const jackCell = ({
     end,
     rowIdx,
     colIdx,
-    type,
+    valid,
     shape,
     num,
     onMouseDown,
@@ -60,7 +60,7 @@ const jackCell = ({
     end: any, // 끝 상태
     rowIdx: number, // 행 위치
     colIdx: number, // 열 위치
-    type: String, // 카드 타입
+    valid: boolean, // 카드 타입
     shape: String, // 카드 모양
     num: number, // 카드 숫자
     onMouseDown: () => void, // 마우스 다운 이벤트 핸들러
@@ -77,14 +77,13 @@ const jackCell = ({
             onMouseDown={onMouseDown}
             onMouseOver={onMouseOver}
         >
-            {shape === 'spade' ? <div>♠️{num}</div> :
+          {valid 
+            ? (shape === 'spade' ? <div>♠️{num}</div> :
                 shape === 'club' ? <div>♣️{num}</div> :
                 shape === 'heart' ? <div>♥️{num}</div> :
-                shape === 'diamond' ? <div>♦️{num}</div> : <div>🃏</div>
-              
-                // ? <CellImage src={`${IMAGEPATH}${shape}_${num}.png`} alt="card" />
-                // : <CellImage src='' alt={`cardName`} />
-            }
+                shape === 'diamond' ? <div>♦️{num}</div> : <div>🃏</div> )
+            : (<div></div>)
+          }
             
         </Cell>
     );

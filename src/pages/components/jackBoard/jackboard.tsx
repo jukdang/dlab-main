@@ -2,6 +2,7 @@
 import { use, useEffect, useState } from 'react';
 import JackCell from './jackcell';
 import styled from '@emotion/styled';
+import { isFlush, isFourofaKind, isFullHouse, isOnePair, isRoyalStraightFlush, isStraight, isStraightFlush, isThreeofAKind, isTwoPair } from './pokerHands';
 
 
 const Main = styled.div`
@@ -9,7 +10,6 @@ const Main = styled.div`
   width: 100%;
   height: 100%;
   align-items: center;
-  display: flex;
   justify-content: center;
 `;
 
@@ -21,8 +21,14 @@ const JackBoardContainer = styled.div`
 
   
   align-items: center;
-  display: flex;
+  display: block;
   justify-content: center;
+`;
+
+const ScoreBoard = styled.div`
+  padding: 0;
+  margin: 0;
+  width: 100%;
 `;
 
 const Board = styled.div`
@@ -46,6 +52,11 @@ const Board = styled.div`
   // };
 `;
 
+const HistoryBoard = styled.div`
+  width: 100%;
+  font-size: clamp(0.5rem, 2vw, 1rem);
+`;
+
 
 
 
@@ -57,26 +68,77 @@ const cols = 9;
 
 const JackBoard = () => {
 
-  const [board, setBoard] = useState<Array<{ shape: string; num: number }>>([]);
+  const [score, setScore] = useState<number>(0.0);
+  const [scoreHistory, setScoreHistory] = useState<Array<{score:number, hand:string}>>([]);
+
+
+  const [board, setBoard] = useState<Array<Array<{ shape: string; num: number, valid: boolean }>>>([]);
   const [selectedCells, setSelectedCells] = useState<Array<{ row: number; col: number }>>([]);
 
   useEffect(() => {
     const newBoard = shapes.flatMap(shape =>
       nums.map(num => ({
         shape,
-        num
+        num,
+        valid: true
     })))
 
-    newBoard.push({ shape: 'Joker', num: 1 });
-    newBoard.push({ shape: 'Joker', num: 2 });
+    newBoard.push({ shape: 'Joker', num: 1, valid: true });
+    newBoard.push({ shape: 'Joker', num: 2, valid: true });
 
     newBoard.sort(() => Math.random() - 0.5);
 
-    setBoard(newBoard);
+    console.log(newBoard.length);
 
+    const board = Array.from({ length: rows }, (_, rowIdx) =>
+      Array.from({ length: cols }, (_, colIdx) => (
+        { shape: newBoard[rowIdx * cols + colIdx].shape, 
+          num: newBoard[rowIdx * cols + colIdx].num, 
+          valid: newBoard[rowIdx * cols + colIdx].valid}
+      ))
+    );
+    
     console.log(board);
+
+    setBoard(board);
+
   }, []);
 
+
+  const checkHands = (selectedCells: Array<{ row: number; col: number }>) => {
+    const hands = selectedCells.map(cell => board[cell.row][cell.col])
+                                .filter(cell => cell.valid === true);
+    
+    hands.sort((a, b) => b.num - a.num);
+
+    var handScore:number = 0;
+
+    // if (isRoyalStraightFlush(hands)) {
+    //   setScore(prev => prev + hands[0].num * 5.0);
+    // } else 
+    if (isStraightFlush(hands)) {
+      handScore =  hands[0].num * 3.0;
+    } else if (isFourofaKind(hands)) {
+      handScore =  hands[0].num * 2.5;
+    } else if (isFullHouse(hands)) {
+      handScore =  hands[0].num * 2.2;
+    } else if (isFlush(hands)) {  
+      handScore =  hands[0].num * 2.0;
+    } else if (isStraight(hands)) {
+      handScore =  hands[0].num * 2.0;
+    } else if (isThreeofAKind(hands)) {
+      handScore =  hands[0].num * 1.3;
+    } else if (isTwoPair(hands)) {
+      handScore =  hands[0].num * 1.2;
+    } else if (isOnePair(hands)) {
+      handScore =  hands[0].num * 1.1;
+    } else {
+      handScore =  hands[0].num * 1.0;
+    }
+
+    setScore(prev => prev + handScore); // Round to 2 decimal places
+    setScoreHistory(prev => [...prev, { score: handScore, hand: hands.map(h => `${h.shape} ${h.num}`).join(', ') }]);
+  }
 
   const [isDragging, setIsDragging] = useState(false);
   const [startCell, setStartCell] = useState({ row: -1, col: -1 });
@@ -110,9 +172,26 @@ const JackBoard = () => {
   };
 
   const handleEnd = () => {
+    if (!isDragging) return;
     setIsDragging(false);
     setStartCell({ row: -1, col: -1 });
-    setSelectedCells([]);
+
+
+    const newBoard = board.map((row, rodIndex) =>
+      row.map((cell, colIdx) => {
+        const isSelected = selectedCells.some(cell => cell.row === rodIndex && cell.col === colIdx);
+        if (isSelected) {
+          return { ...cell, valid: false }; // Mark as invalid
+        }
+        return cell; // Keep the original cell
+      })
+    );
+    setBoard(newBoard);
+    
+    setSelectedCells([]); 
+
+
+    checkHands(selectedCells);
   };
 
   
@@ -120,30 +199,45 @@ const JackBoard = () => {
   return (
     <Main> 
       <JackBoardContainer>
+        <ScoreBoard>
+          <h2>Score: {score.toFixed(2)}</h2>
+        </ScoreBoard>
         <Board
           onMouseUp={() => handleEnd()}
         >
-          {Array.from({ length: rows }).map((_, rowIdx) => 
-            Array.from({ length: cols }).map((_, colIdx) => 
+          {board.length > 0 &&
+            Array.from({ length: rows }).map((_, rowIdx) => 
+              Array.from({ length: cols }).map((_, colIdx) => 
 
-              <JackCell
-                key={`${rowIdx}-${colIdx}`}
-                isSelected={selectedCells.some(cell => cell.row === rowIdx && cell.col === colIdx)}
-                flag={false}
-                end={false}
-                rowIdx={rowIdx}
-                colIdx={colIdx}
-                type={"number"}
-                shape={board[rowIdx * cols + colIdx]?.shape || 'spade'}
-                num={board[rowIdx * cols + colIdx]?.num || 1}
-                onMouseDown={() => handleStart(rowIdx, colIdx)}
-                onMouseOver={() => handleMove(rowIdx, colIdx)}
-              />
+                <JackCell
+                  key={`${rowIdx}-${colIdx}`}
+                  isSelected={selectedCells.some(cell => cell.row === rowIdx && cell.col === colIdx)}
+                  flag={false}
+                  end={false}
+                  rowIdx={rowIdx}
+                  colIdx={colIdx}
+                  valid={board[rowIdx][colIdx].valid}
+                  shape={board[rowIdx][colIdx].shape}
+                  num={board[rowIdx][colIdx]?.num}
+                  onMouseDown={() => handleStart(rowIdx, colIdx)}
+                  onMouseOver={() => handleMove(rowIdx, colIdx)}
+                />
 
+              )
             )
-          )}
+          }
         </Board>
       </JackBoardContainer>
+      <HistoryBoard>
+        <h3>Score History</h3>
+        <ul>
+          {scoreHistory.map((entry, index) => (
+            <p key={index}>
+              {entry.hand} - Score: {entry.score.toFixed(2)}
+            </p>
+          ))}
+        </ul>
+      </HistoryBoard>
     </Main>
 
     
