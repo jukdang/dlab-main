@@ -68,6 +68,12 @@ const jackCell = ({
 }) => {
 
 
+    const CARD_VALUES: { [key: number]: string } = {
+      1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6',
+      7: '7', 8: '8', 9: '9', 10: '10',
+      11: 'J', 12: 'Q', 13: 'K'
+    };
+
     return (
         <Cell
             id={`${rowIdx}_${colIdx}`}
@@ -78,10 +84,10 @@ const jackCell = ({
             onMouseOver={onMouseOver}
         >
           {valid 
-            ? (shape === 'spade' ? <div>♠️{num}</div> :
-                shape === 'club' ? <div>♣️{num}</div> :
-                shape === 'heart' ? <div>♥️{num}</div> :
-                shape === 'diamond' ? <div>♦️{num}</div> : <div>🃏</div> )
+            ? (shape === 'spade' ? <div>♠️{CARD_VALUES[num]}</div> :
+                shape === 'club' ? <div>♣️{CARD_VALUES[num]}</div> :
+                shape === 'heart' ? <div>♥️{CARD_VALUES[num]}</div> :
+                shape === 'diamond' ? <div>♦️{CARD_VALUES[num]}</div> : <div>🃏</div> )
             : (<div></div>)
           }
             

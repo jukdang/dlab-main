@@ -75,6 +75,9 @@ const JackBoard = () => {
   const [board, setBoard] = useState<Array<Array<{ shape: string; num: number, valid: boolean }>>>([]);
   const [selectedCells, setSelectedCells] = useState<Array<{ row: number; col: number }>>([]);
 
+  const [isDragging, setIsDragging] = useState(false);
+  const [startCell, setStartCell] = useState({ row: -1, col: -1 });
+
   useEffect(() => {
     const newBoard = shapes.flatMap(shape =>
       nums.map(num => ({
@@ -83,8 +86,8 @@ const JackBoard = () => {
         valid: true
     })))
 
-    newBoard.push({ shape: 'Joker', num: 1, valid: true });
-    newBoard.push({ shape: 'Joker', num: 2, valid: true });
+    newBoard.push({ shape: 'Joker', num: 0, valid: true });
+    newBoard.push({ shape: 'Joker', num: 0, valid: true });
 
     newBoard.sort(() => Math.random() - 0.5);
 
@@ -104,78 +107,41 @@ const JackBoard = () => {
 
   }, []);
 
-
   const checkHands = (selectedCells: Array<{ row: number; col: number }>) => {
-    const hands = selectedCells.map(cell => board[cell.row][cell.col])
-                                .filter(cell => cell.valid === true);
-    
-    hands.sort((a, b) => b.num - a.num);
+    const fullHands = selectedCells.map(cell => board[cell.row][cell.col])
+                                .filter(cell => cell.valid === true)
+                                .sort((a, b) => b.num - a.num);
+
+    const handsWithoutJoker = fullHands.filter(hand => hand.shape !== 'Joker');
+    const jokerCount = fullHands.length - handsWithoutJoker.length;
 
     var handScore:number = 0;
 
     // if (isRoyalStraightFlush(hands)) {
     //   setScore(prev => prev + hands[0].num * 5.0);
     // } else 
-    if (isStraightFlush(hands)) {
-      handScore =  hands[0].num * 3.0;
-    } else if (isFourofaKind(hands)) {
-      handScore =  hands[0].num * 2.5;
-    } else if (isFullHouse(hands)) {
-      handScore =  hands[0].num * 2.2;
-    } else if (isFlush(hands)) {  
-      handScore =  hands[0].num * 2.0;
-    } else if (isStraight(hands)) {
-      handScore =  hands[0].num * 2.0;
-    } else if (isThreeofAKind(hands)) {
-      handScore =  hands[0].num * 1.3;
-    } else if (isTwoPair(hands)) {
-      handScore =  hands[0].num * 1.2;
-    } else if (isOnePair(hands)) {
-      handScore =  hands[0].num * 1.1;
-    } else {
-      handScore =  hands[0].num * 1.0;
-    }
+    if (isStraightFlush(handsWithoutJoker, jokerCount)) {
+      handScore =  handsWithoutJoker[0].num * 3.0;
+    } else if (isFourofaKind(handsWithoutJoker, jokerCount)) {
+      handScore =  handsWithoutJoker[0].num * 2.5;
+    } else if (isFullHouse(handsWithoutJoker, jokerCount)) {
+      handScore =  handsWithoutJoker[0].num * 2.2;
+    } else if (isFlush(handsWithoutJoker, jokerCount)) {  
+      handScore =  handsWithoutJoker[0].num * 2.0;
+    } else if (isStraight(handsWithoutJoker, jokerCount)) {
+      handScore =  handsWithoutJoker[0].num * 2.0;
+    } else if (isThreeofAKind(handsWithoutJoker, jokerCount)) {
+      handScore =  handsWithoutJoker[0].num * 1.3;
+    } else if (isTwoPair(handsWithoutJoker, jokerCount)) {
+      handScore =  handsWithoutJoker[0].num * 1.2;
+    } else if  (isOnePair(handsWithoutJoker, jokerCount)) {
+      handScore =  handsWithoutJoker[0].num * 1.1;
+    } 
+
+    if (handScore === 0) return;
 
     setScore(prev => prev + handScore); // Round to 2 decimal places
-    setScoreHistory(prev => [...prev, { score: handScore, hand: hands.map(h => `${h.shape} ${h.num}`).join(', ') }]);
-  }
-
-  const [isDragging, setIsDragging] = useState(false);
-  const [startCell, setStartCell] = useState({ row: -1, col: -1 });
-
-  const handleStart = (row:number, col:number) => {
-    setIsDragging(true);
-    setStartCell({ row, col });
-  };
-
-  const handleMove = (row:number, col:number) => {
-    if (isDragging) {
-      const { minY, maxY } =
-        startCell.row < row
-          ? { minY: startCell.row, maxY: row }
-          : { minY: row, maxY: startCell.row };
-      const { minX, maxX } =
-        startCell.col < col
-          ? { minX: startCell.col, maxX: col }
-          : { minX: col, maxX: startCell.col };
-
-      const newSelectedCells = [];
-      for (let r = minY; r <= maxY; r++) {
-        for (let c = minX; c <= maxX; c++) {
-          newSelectedCells.push({ row: r, col: c });
-        }
-      }
-      setSelectedCells(newSelectedCells);
-
-      console.log(`Select from (${minX}, ${minY}) to (${maxX}, ${maxY})`);
-    }
-  };
-
-  const handleEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    setStartCell({ row: -1, col: -1 });
-
+    setScoreHistory(prev => [...prev, { score: handScore, hand: fullHands.map(h => `${h.shape} ${h.num}`).join(', ') }]);
 
     const newBoard = board.map((row, rodIndex) =>
       row.map((cell, colIdx) => {
@@ -187,11 +153,55 @@ const JackBoard = () => {
       })
     );
     setBoard(newBoard);
+  }
+
+
+
+  const handleStart = (row:number, col:number) => {
+    setIsDragging(true);
+    setStartCell({ row, col });
+  };
+
+  const handleMove = (row:number, col:number) => {
+    // if (isDragging) {
+    //   const { minY, maxY } =
+    //     startCell.row < row
+    //       ? { minY: startCell.row, maxY: row }
+    //       : { minY: row, maxY: startCell.row };
+    //   const { minX, maxX } =
+    //     startCell.col < col
+    //       ? { minX: startCell.col, maxX: col }
+    //       : { minX: col, maxX: startCell.col };
+
+    //   const newSelectedCells = [];
+    //   for (let r = minY; r <= maxY; r++) {
+    //     for (let c = minX; c <= maxX; c++) {
+    //       newSelectedCells.push({ row: r, col: c });
+    //     }
+    //   }
+    //   setSelectedCells(newSelectedCells);
+     
+    // }
+
+    // console.log(`Select from (${minX}, ${minY}) to (${maxX}, ${maxY})`);
+
+    if (!isDragging) return;
+    if (selectedCells.some(cell => cell.row === row && cell.col === col)) return; // Prevent re-selecting the same cell
+    setSelectedCells([  ...selectedCells, { row, col }])
+
+     
+  };
+
+  const handleEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    // setStartCell({ row: -1, col: -1 });
+
+    
+    checkHands(selectedCells);
     
     setSelectedCells([]); 
 
-
-    checkHands(selectedCells);
   };
 
   
