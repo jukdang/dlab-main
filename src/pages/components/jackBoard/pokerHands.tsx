@@ -70,7 +70,9 @@ export const isStraight = (cards: Array<{shape: string; num: number; valid: bool
         return false;
       }
     }
+    curNum = cards[i].num;
     i++;
+    
   }
     
   return true; // Placeholder return value

@@ -4,11 +4,17 @@ import JackCell from './jackcell';
 import styled from '@emotion/styled';
 import { isFlush, isFourofaKind, isFullHouse, isOnePair, isRoyalStraightFlush, isStraight, isStraightFlush, isThreeofAKind, isTwoPair } from './pokerHands';
 
+const CARD_VALUES: { [key: number]: string } = {
+  1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6',
+  7: '7', 8: '8', 9: '9', 10: '10',
+  11: 'J', 12: 'Q', 13: 'K'
+};
 
 const Main = styled.div`
   margin-top: 120px;
   width: 100%;
   height: 100%;
+  
   align-items: center;
   justify-content: center;
 `;
@@ -16,6 +22,7 @@ const Main = styled.div`
 const JackBoardContainer = styled.div`
   width: 100%;
   max-width: 25rem;
+  margin: 0 auto;
   padding: 1rem;
   border: 0.1rem solid #a5ada6;
 
@@ -54,10 +61,25 @@ const Board = styled.div`
 
 const HistoryBoard = styled.div`
   width: 100%;
-  font-size: clamp(0.5rem, 2vw, 1rem);
+  font-size: clamp(0.2rem, 2vw, 0.5rem);
 `;
 
+const HistoryType = styled.span`
+  width: 50px;
+`;
 
+const HistoryScore = styled.span`
+  width: 50px;
+`;
+
+const HistoryHands = styled.span`
+  width: 70px;
+`;
+
+const HistoryHand = styled.span`
+  width: 15px;
+  padding: 0.05rem;
+`;
 
 
 const shapes = ['spade', 'heart', 'diamond', 'club'];
@@ -69,7 +91,7 @@ const cols = 9;
 const JackBoard = () => {
 
   const [score, setScore] = useState<number>(0.0);
-  const [scoreHistory, setScoreHistory] = useState<Array<{score:number, hand:string}>>([]);
+  const [scoreHistory, setScoreHistory] = useState<Array<{type: string, score: number, hands: Array<{num: number, shape: string}>}>>([]);
 
 
   const [board, setBoard] = useState<Array<Array<{ shape: string; num: number, valid: boolean }>>>([]);
@@ -116,32 +138,41 @@ const JackBoard = () => {
     const jokerCount = fullHands.length - handsWithoutJoker.length;
 
     var handScore:number = 0;
+    var handType:string = '';
 
     // if (isRoyalStraightFlush(hands)) {
     //   setScore(prev => prev + hands[0].num * 5.0);
     // } else 
     if (isStraightFlush(handsWithoutJoker, jokerCount)) {
       handScore =  handsWithoutJoker[0].num * 3.0;
+      handType = 'Straight Flush';
     } else if (isFourofaKind(handsWithoutJoker, jokerCount)) {
       handScore =  handsWithoutJoker[0].num * 2.5;
+      handType = 'Four of a Kind';
     } else if (isFullHouse(handsWithoutJoker, jokerCount)) {
       handScore =  handsWithoutJoker[0].num * 2.2;
+      handType = 'Full House';
     } else if (isFlush(handsWithoutJoker, jokerCount)) {  
       handScore =  handsWithoutJoker[0].num * 2.0;
+      handType = 'Flush';
     } else if (isStraight(handsWithoutJoker, jokerCount)) {
       handScore =  handsWithoutJoker[0].num * 2.0;
+      handType = 'Straight';
     } else if (isThreeofAKind(handsWithoutJoker, jokerCount)) {
       handScore =  handsWithoutJoker[0].num * 1.3;
+      handType = 'Three of a Kind';
     } else if (isTwoPair(handsWithoutJoker, jokerCount)) {
       handScore =  handsWithoutJoker[0].num * 1.2;
+      handType = 'Two Pair';
     } else if  (isOnePair(handsWithoutJoker, jokerCount)) {
       handScore =  handsWithoutJoker[0].num * 1.1;
+      handType = 'One Pair';
     } 
 
     if (handScore === 0) return;
 
     setScore(prev => prev + handScore); // Round to 2 decimal places
-    setScoreHistory(prev => [...prev, { score: handScore, hand: fullHands.map(h => `${h.shape} ${h.num}`).join(', ') }]);
+    setScoreHistory(prev => [...prev, { type: handType, score: handScore, hands: fullHands }]);
 
     const newBoard = board.map((row, rodIndex) =>
       row.map((cell, colIdx) => {
@@ -240,11 +271,26 @@ const JackBoard = () => {
       </JackBoardContainer>
       <HistoryBoard>
         <h3>Score History</h3>
-        <ul>
+        <ul style={{ listStyleType: 'none', padding: 0, margin: 0}}>
           {scoreHistory.map((entry, index) => (
-            <p key={index}>
-              {entry.hand} - Score: {entry.score.toFixed(2)}
-            </p>
+            <li key={index}>
+              <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', justifyContent: 'center' }}>
+                <HistoryType>{entry.type}</HistoryType>
+                <HistoryHands>  
+                  {entry.hands.map((hand, idx) => (
+                    hand.shape === 'spade' ? <HistoryHand key={idx}>♠️{CARD_VALUES[hand.num]}</HistoryHand> :
+                    hand.shape === 'club' ? <HistoryHand key={idx}>♣️{CARD_VALUES[hand.num]}</HistoryHand> :
+                    hand.shape === 'heart' ? <HistoryHand key={idx}>♥️{CARD_VALUES[hand.num]}</HistoryHand> :
+                    hand.shape === 'diamond' ? <HistoryHand key={idx}>♦️{CARD_VALUES[hand.num]}</HistoryHand> :
+                    <HistoryHand key={idx}> 🃏 </HistoryHand>
+                  ))}
+                </HistoryHands>
+                
+                <HistoryScore style={{ marginLeft: '1rem' }}>
+                  Score: {entry.score.toFixed(2)}
+                </HistoryScore>
+              </div>
+            </li>
           ))}
         </ul>
       </HistoryBoard>
