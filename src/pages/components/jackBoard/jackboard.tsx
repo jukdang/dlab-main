@@ -1,8 +1,9 @@
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import JackCell from './jackcell';
-import styled from '@emotion/styled';
+import { JackBoardContainer, Main, ScoreBoard, Board, HistoryBoard, HistoryType, HistoryHands, HistoryHand, HistoryScore, TimerBoard } from './jackboard.styles';
 import { isFlush, isFourofaKind, isFullHouse, isOnePair, isRoyalStraightFlush, isStraight, isStraightFlush, isThreeofAKind, isTwoPair } from './pokerHands';
+import { useBackgroundMusic, useSoundEffect } from './sounds';
 
 const CARD_VALUES: { [key: number]: string } = {
   1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6',
@@ -10,76 +11,7 @@ const CARD_VALUES: { [key: number]: string } = {
   11: 'J', 12: 'Q', 13: 'K'
 };
 
-const Main = styled.div`
-  margin-top: 120px;
-  width: 100%;
-  height: 100%;
-  
-  align-items: center;
-  justify-content: center;
-`;
 
-const JackBoardContainer = styled.div`
-  width: 100%;
-  max-width: 25rem;
-  margin: 0 auto;
-  padding: 1rem;
-  border: 0.1rem solid #a5ada6;
-
-  
-  align-items: center;
-  display: block;
-  justify-content: center;
-`;
-
-const ScoreBoard = styled.div`
-  padding: 0;
-  margin: 0;
-  width: 100%;
-`;
-
-const Board = styled.div`
-  user-select: none;
-  -webkit-user-drag: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-
-  display: grid;
-  grid-template-columns: repeat(9, clamp(1rem, 3vw, 2rem));
-  gap: 0.25rem;
-  width: 100%;
-  margin: 0 auto;
-  place-content: center;
-  // @media (max-width: 768px) {
-  //   maxWidth: 100%;
-  //   width: 100%;
-  //   gap: 0.125rem;
-  //   grid-template-columns: repeat(9, 1fr);
-  // };
-`;
-
-const HistoryBoard = styled.div`
-  width: 100%;
-  font-size: clamp(0.2rem, 2vw, 0.5rem);
-`;
-
-const HistoryType = styled.span`
-  width: 50px;
-`;
-
-const HistoryScore = styled.span`
-  width: 50px;
-`;
-
-const HistoryHands = styled.span`
-  width: 70px;
-`;
-
-const HistoryHand = styled.span`
-  width: 15px;
-  padding: 0.05rem;
-`;
 
 
 const shapes = ['spade', 'heart', 'diamond', 'club'];
@@ -90,9 +22,16 @@ const cols = 9;
 
 const JackBoard = () => {
 
+  const volume = 0.1;
+  const backgroundMusic = useBackgroundMusic(volume);
+  const soundEffect = useSoundEffect(volume);
+
+  const [timer, setTimer] = useState<number>(10);
   const [score, setScore] = useState<number>(0.0);
   const [scoreHistory, setScoreHistory] = useState<Array<{type: string, score: number, hands: Array<{num: number, shape: string}>}>>([]);
 
+  const [isRunning, setIsRunning] = useState<boolean>(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const [board, setBoard] = useState<Array<Array<{ shape: string; num: number, valid: boolean }>>>([]);
   const [selectedCells, setSelectedCells] = useState<Array<{ row: number; col: number }>>([]);
@@ -113,8 +52,6 @@ const JackBoard = () => {
 
     newBoard.sort(() => Math.random() - 0.5);
 
-    console.log(newBoard.length);
-
     const board = Array.from({ length: rows }, (_, rowIdx) =>
       Array.from({ length: cols }, (_, colIdx) => (
         { shape: newBoard[rowIdx * cols + colIdx].shape, 
@@ -122,12 +59,41 @@ const JackBoard = () => {
           valid: newBoard[rowIdx * cols + colIdx].valid}
       ))
     );
-    
-    console.log(board);
 
     setBoard(board);
 
   }, []);
+
+  useEffect(() => {
+    if (isRunning) {
+      intervalRef.current = setInterval(() => {
+        setTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(intervalRef.current!);
+            setIsRunning(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current!);
+    }
+
+    return () => clearInterval(intervalRef.current!);
+  }, [isRunning]);
+
+
+
+  useEffect(() => {
+    if (isRunning) {
+      if (backgroundMusic) backgroundMusic.play();
+    } else {
+      if (backgroundMusic) backgroundMusic.stop();
+    }
+  }, [backgroundMusic, isRunning]);
+
+
 
   const checkHands = (selectedCells: Array<{ row: number; col: number }>) => {
     const fullHands = selectedCells.map(cell => board[cell.row][cell.col])
@@ -184,37 +150,21 @@ const JackBoard = () => {
       })
     );
     setBoard(newBoard);
+
+    if (soundEffect) soundEffect.play();
   }
 
 
 
   const handleStart = (row:number, col:number) => {
+    if (!isRunning) return;
+    
     setIsDragging(true);
     setStartCell({ row, col });
   };
 
   const handleMove = (row:number, col:number) => {
-    // if (isDragging) {
-    //   const { minY, maxY } =
-    //     startCell.row < row
-    //       ? { minY: startCell.row, maxY: row }
-    //       : { minY: row, maxY: startCell.row };
-    //   const { minX, maxX } =
-    //     startCell.col < col
-    //       ? { minX: startCell.col, maxX: col }
-    //       : { minX: col, maxX: startCell.col };
-
-    //   const newSelectedCells = [];
-    //   for (let r = minY; r <= maxY; r++) {
-    //     for (let c = minX; c <= maxX; c++) {
-    //       newSelectedCells.push({ row: r, col: c });
-    //     }
-    //   }
-    //   setSelectedCells(newSelectedCells);
-     
-    // }
-
-    // console.log(`Select from (${minX}, ${minY}) to (${maxX}, ${maxY})`);
+    if (!isRunning) return;
 
     if (!isDragging) return;
     if (selectedCells.some(cell => cell.row === row && cell.col === col)) return; // Prevent re-selecting the same cell
@@ -224,6 +174,8 @@ const JackBoard = () => {
   };
 
   const handleEnd = () => {
+    if (!isRunning) return;
+
     if (!isDragging) return;
     setIsDragging(false);
     // setStartCell({ row: -1, col: -1 });
@@ -240,6 +192,9 @@ const JackBoard = () => {
   return (
     <Main> 
       <JackBoardContainer>
+        <TimerBoard>
+          <h2>Time left: {timer}</h2>
+        </TimerBoard>
         <ScoreBoard>
           <h2>Score: {score.toFixed(2)}</h2>
         </ScoreBoard>
@@ -254,7 +209,7 @@ const JackBoard = () => {
                   key={`${rowIdx}-${colIdx}`}
                   isSelected={selectedCells.some(cell => cell.row === rowIdx && cell.col === colIdx)}
                   flag={false}
-                  end={false}
+                  enable={isRunning}
                   rowIdx={rowIdx}
                   colIdx={colIdx}
                   valid={board[rowIdx][colIdx].valid}

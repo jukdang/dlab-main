@@ -6,8 +6,6 @@ const IMAGEPATH = '/cards/card_';
 
 interface CellProps {
   isSelected: boolean;
-  flag: any;
-  end: any;
 }
 
 const Cell = styled.div<CellProps>`
@@ -46,7 +44,7 @@ const CellImage = styled.img`
 const jackCell = ({
     isSelected,
     flag,
-    end,
+    enable,
     rowIdx,
     colIdx,
     valid,
@@ -57,7 +55,7 @@ const jackCell = ({
 }: {
     isSelected: boolean, // 셀 선택 상태
     flag: any, // 플래그 상태
-    end: any, // 끝 상태
+    enable: boolean, // 셀 활성화 여부
     rowIdx: number, // 행 위치
     colIdx: number, // 열 위치
     valid: boolean, // 카드 타입
@@ -78,8 +76,6 @@ const jackCell = ({
         <Cell
             id={`${rowIdx}_${colIdx}`}
             isSelected={isSelected}
-            flag={flag}
-            end={end} 
             onMouseDown={onMouseDown}
             onMouseOver={onMouseOver}
         >
