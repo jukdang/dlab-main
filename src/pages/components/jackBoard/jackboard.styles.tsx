@@ -1,9 +1,8 @@
 import styled from '@emotion/styled';
 
 export const Main = styled.div`
-  margin-top: 120px;
+  margin-top: 5rem;
   width: 100%;
-  height: 100%;
   
   align-items: center;
   justify-content: center;
@@ -11,7 +10,7 @@ export const Main = styled.div`
 
 export const JackBoardContainer = styled.div`
   width: 100%;
-  max-width: 25rem;
+  max-width: 40rem;
   margin: 0 auto;
   padding: 1rem;
   border: 0.1rem solid #a5ada6;

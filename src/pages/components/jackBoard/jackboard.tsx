@@ -26,7 +26,7 @@ const JackBoard = () => {
   const backgroundMusic = useBackgroundMusic(volume);
   const soundEffect = useSoundEffect(volume);
 
-  const [timer, setTimer] = useState<number>(10);
+  const [timer, setTimer] = useState<number>(60);
   const [score, setScore] = useState<number>(0.0);
   const [scoreHistory, setScoreHistory] = useState<Array<{type: string, score: number, hands: Array<{num: number, shape: string}>}>>([]);
 
@@ -190,8 +190,7 @@ const JackBoard = () => {
   
 
   return (
-    <Main> 
-      <JackBoardContainer>
+    <>
         <TimerBoard>
           <h2>Time left: {timer}</h2>
         </TimerBoard>
@@ -222,9 +221,8 @@ const JackBoard = () => {
               )
             )
           }
-        </Board>
-      </JackBoardContainer>
-      <HistoryBoard>
+      </Board>
+      {/* <HistoryBoard>
         <h3>Score History</h3>
         <ul style={{ listStyleType: 'none', padding: 0, margin: 0}}>
           {scoreHistory.map((entry, index) => (
@@ -248,8 +246,8 @@ const JackBoard = () => {
             </li>
           ))}
         </ul>
-      </HistoryBoard>
-    </Main>
+      </HistoryBoard> */}
+    </>
 
     
   )
